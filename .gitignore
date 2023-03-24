@@ -9,6 +9,4 @@ node_modules
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 *.db
-.netlify
-.svelte-kit
-build
+/.netlify
