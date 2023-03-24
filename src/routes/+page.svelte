@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { each } from 'svelte/internal';
 
 	const rooms = [
 		{ href: '/game/1', name: 'Room 1' },
@@ -30,5 +29,6 @@
 	}
 	section {
 		display: flex;
+		gap: 2rem;
 	}
 </style>
