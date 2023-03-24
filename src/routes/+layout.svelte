@@ -1,0 +1,55 @@
+<script lang="ts">
+	import type { LayoutData } from './$types';
+	import { onMount } from 'svelte';
+	import { invalidate } from '$app/navigation';
+	import '../app.css';
+	import type { AuthError } from '@supabase/supabase-js';
+
+	export let data: LayoutData;
+	let error: AuthError | null = null;
+
+	$: ({ supabase } = data);
+
+	onMount(() => {
+		const {
+			data: { subscription }
+		} = supabase.auth.onAuthStateChange(() => {
+			invalidate('supabase:auth');
+		});
+
+		return () => subscription.unsubscribe();
+	});
+</script>
+
+<nav>
+	<a href="/">Home</a>
+	{#if !data.session}
+		<button
+			on:click={async () => {
+				({ error } = await supabase.auth.signInWithOAuth({ provider: 'github' }));
+			}}>Login</button
+		>
+	{:else}
+		<p>Hello {data.session.user.email}</p>
+		<button
+			on:click={async () => {
+				({ error } = await supabase.auth.signOut());
+			}}>Logout</button
+		>
+	{/if}
+</nav>
+{#if error}
+	Something went wrong...
+{/if}
+<slot />
+
+<style>
+	a {
+		margin: 0.7rem 1rem;
+	}
+	nav {
+		display: flex;
+		justify-content: space-around;
+		align-items: center;
+	}
+</style>
