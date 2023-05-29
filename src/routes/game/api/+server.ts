@@ -7,7 +7,9 @@ import { slots } from '$lib/server/db';
 
 export const GET = (async ({ locals, url }) => {
 	const room = url.searchParams.get('room') as string;
-	const id = (await locals.getSession())?.user.id as string;
+	const session = await locals.getSession();
+
+	const id = session?.user?.email as string;
 
 	let { bus = null, game = null } = slots.get(room) || {};
 

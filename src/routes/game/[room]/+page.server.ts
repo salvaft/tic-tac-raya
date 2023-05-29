@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			message: 'Room Not found'
 		});
 	}
-	const id = (await locals?.getSession())?.user.id;
+	const id = (await locals?.getSession())?.user?.email;
 
 	return { id, path: url.pathname };
 };

@@ -1,38 +1,32 @@
+import { sequence } from '@sveltejs/kit/hooks';
+import { SvelteKitAuth } from '@auth/sveltekit';
+import GitHub from '@auth/core/providers/github';
+import { AUTH_SECRET, GITHUB_ID, GITHUB_SECRET } from '$env/static/private';
 import { redirect, type Handle } from '@sveltejs/kit';
-import { PUBLIC_SUPABASE_ANON_KEY, PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { createSupabaseServerClient } from '@supabase/auth-helpers-sveltekit';
+import type { Provider } from '@auth/core/providers';
 
-export const handle: Handle = async ({ event, resolve }) => {
-	event.locals.supabase = createSupabaseServerClient({
-		supabaseUrl: PUBLIC_SUPABASE_URL,
-		supabaseKey: PUBLIC_SUPABASE_ANON_KEY,
-		event
-	});
-
-	event.locals.getSession = async () => {
-		const {
-			data: { session }
-		} = await event.locals.supabase.auth.getSession();
-		return session;
-	};
-
-	// Route protection
-	if (event.url.pathname === '/game') {
-		throw redirect(303, '/');
-	}
-	const id = (await event.locals.getSession())?.user.id;
-	if (event.url.pathname.startsWith('/game') && !id) {
-		throw redirect(303, '/');
-	}
-
-	return resolve(event, {
-		/**
-		 * There´s an issue with `filterSerializedResponseHeaders` not working when using `sequence`
-		 *
-		 * https://github.com/sveltejs/kit/issues/8061
-		 */
-		filterSerializedResponseHeaders(name) {
-			return name === 'content-range';
+const authorization = (async ({ event, resolve }) => {
+	// Protect any routes under /authenticated
+	if (event.url.pathname.startsWith('/game')) {
+		const session = await event.locals.getSession();
+		if (!session) {
+			throw redirect(303, '/');
 		}
-	});
-};
+	}
+
+	// If the request is still here, just proceed as normally
+	return resolve(event);
+}) satisfies Handle;
+
+// First handle authentication, then authorization
+// Each function acts as a middleware, receiving the request handle
+// And returning a handle which gets passed to the next function
+// export const handle: Handle = authorization;
+export const handle: Handle = sequence(
+	SvelteKitAuth({
+		trustHost: true,
+		secret: AUTH_SECRET,
+		providers: [GitHub({ clientId: GITHUB_ID, clientSecret: GITHUB_SECRET })] as Provider[]
+	}),
+	authorization
+);

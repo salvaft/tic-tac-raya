@@ -1,55 +1,50 @@
 <script lang="ts">
 	import type { LayoutData } from './$types';
-	import { onMount } from 'svelte';
-	import { invalidate } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import '../app.css';
-	import type { AuthError } from '@supabase/supabase-js';
+	import { signIn, signOut } from '@auth/sveltekit/client';
+	import 'iconify-icon';
 
 	export let data: LayoutData;
-	let error: AuthError | null = null;
-
-	$: ({ supabase } = data);
-
-	onMount(() => {
-		const {
-			data: { subscription }
-		} = supabase.auth.onAuthStateChange(() => {
-			invalidate('supabase:auth');
-		});
-
-		return () => subscription.unsubscribe();
-	});
 </script>
 
 <nav>
 	<a href="/">Home</a>
 	{#if !data.session}
 		<button
-			on:click={async () => {
-				({ error } = await supabase.auth.signInWithOAuth({ provider: 'github' }));
-			}}>Login</button
+			on:click={() => {
+				signIn('github');
+			}}
+		>
+			<iconify-icon icon="tabler:brand-github" />
+			Login</button
 		>
 	{:else}
-		<p>Hello {data.session.user.email}</p>
+		<p>Hello {data.session.user?.email}</p>
 		<button
 			on:click={async () => {
-				({ error } = await supabase.auth.signOut());
-			}}>Logout</button
+				await signOut();
+				goto('/');
+			}}
+		>
+			Logout</button
 		>
 	{/if}
 </nav>
-{#if error}
-	Something went wrong...
-{/if}
+
 <slot />
 
 <style>
 	a {
 		margin: 0.7rem 1rem;
 	}
-	nav {
+	nav,
+	button {
 		display: flex;
 		justify-content: space-around;
 		align-items: center;
+	}
+	button {
+		gap: 0.5rem;
 	}
 </style>
