@@ -1,0 +1,34 @@
+- hosts: tictac
+  name: Deploy
+  gather_facts: true
+  vars:
+    ansible_user: root
+  tasks:
+    - name: Stop server
+      ansible.builtin.command: rc-service tictac stop
+      register: my_output # <- Registers the command output.
+      changed_when: my_output.rc != 0
+    - name: Rsync
+      ansible.posix.synchronize:
+        mode: push
+        src: /home/sft/dev/tres-en-raya
+        dest: /opt/
+        rsync_opts:
+          - "--exclude=node_modules"
+          - "--exclude=build"
+          - "--exclude=.svelte-kit"
+          - "--exclude=.git"
+      register: output
+    - name: Print rsync output
+      ansible.builtin.debug:
+        var: output.stdout_lines
+    - name: Build
+      ansible.builtin.command: npm run build
+      register: my_output # <- Registers the command output.
+      changed_when: my_output.rc != 0
+      args:
+        chdir: /opt/tres-en-raya-supabase
+    - name: Restart server
+      ansible.builtin.command: rc-service tictac restart
+      register: my_output # <- Registers the command output.
+      changed_when: my_output.rc != 0
