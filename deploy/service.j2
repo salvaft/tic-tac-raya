@@ -1,0 +1,11 @@
+#!/sbin/openrc-run
+command="node /opt/tres-en-raya-supabase/build"
+command_user="sft"
+command_background=true
+depend() {
+    need net
+}
+pidfile="/run/${RC_SVCNAME}.pid"
+name="tictac"
+description="tictac"
+export ORIGIN=https://tictac.torocro.duckdns.org

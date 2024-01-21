@@ -1,0 +1,32 @@
+server {
+  server_name tictac.torocro.duckdns.org;
+  listen [::]:443 ssl; # managed by Certbot
+  listen 443 ssl; # managed by Certbot
+  include /etc/nginx/conf.d/include/header-ssl.conf;
+  include /etc/nginx/conf.d/include/common-exploits.conf;
+    ssl_certificate /etc/letsencrypt/live/tictac.torocro.duckdns.org/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/tictac.torocro.duckdns.org/privkey.pem; # managed by Certbot
+
+        location / {
+    proxy_pass http://192.168.0.113:3000/;
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_set_header Host $host;
+    proxy_set_header Connection '';
+    # proxy_http_version 1.1;
+    chunked_transfer_encoding off;
+    }
+
+
+
+}
+# Redirect http traffic to https and return 404 if forced via http
+server {
+   if ($host = tictac.torocro.duckdns.org) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+        listen 80 ;
+        listen [::]:80 ;
+    server_name tictac.torocro.duckdns.org;
+    return 404; # managed by Certbot
+}

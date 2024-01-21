@@ -11,8 +11,8 @@
     - name: Rsync
       ansible.posix.synchronize:
         mode: push
-        src: /home/sft/dev/tres-en-raya
-        dest: /opt/
+        src: /home/sft/dev/tres-en-raya/
+        dest: /opt/tres-en-raya-supabase/
         rsync_opts:
           - "--exclude=node_modules"
           - "--exclude=build"
@@ -28,7 +28,35 @@
       changed_when: my_output.rc != 0
       args:
         chdir: /opt/tres-en-raya-supabase
+    - name: Service file from template
+      template:
+        src: service.j2
+        dest: /etc/init.d/tres-en-raya-supabase
+        mode: '0755'
+        owner: root
+        group: root
     - name: Restart server
       ansible.builtin.command: rc-service tictac restart
       register: my_output # <- Registers the command output.
       changed_when: my_output.rc != 0
+
+- hosts: proxy
+  name: nginx
+  vars:
+    ansible_user: root
+  tasks:
+    - name: Generate Nginx for torocro
+      template:
+        src: tictac.j2
+        dest: /etc/nginx/sites-available/tictac.torocro.conf
+
+    - name: Create a symlink to enable the site
+      file:
+        src: /etc/nginx/sites-available/tictac.torocro.conf
+        dest: /etc/nginx/sites-enabled/tictac.torocro.conf
+        state: link
+
+    - name: Reload Nginx
+      service:
+        name: nginx
+        state: reloaded
